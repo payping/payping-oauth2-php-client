@@ -7,7 +7,7 @@ This package provides Payping OAuth 2.0 support for the PHP League's [OAuth 2.0 
 To install, use composer:
 
 ```
-composer require flotfeali/oauth2-payping-client
+composer require payping/oauth2-payping-php-client
 ```
 ## Usage
 
