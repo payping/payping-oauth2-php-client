@@ -16,49 +16,68 @@ Usage is the same as The League's OAuth client, using `\Stevenmaguire\OAuth2\Cli
 ### Authorization Code Flow
 
 ```php
-$provider = new PayPing\OAuth2\Client\Provider\PayPing([
-    'clientId'          => '{dropbox-client-id}',
-    'clientSecret'      => '{dropbox-client-secret}',
-    'redirectUri'       => 'https://example.com/callback-url'
-]);
+include "vendor/autoload.php";
 
+ function generateVerified(){
+     $random = bin2hex(openssl_random_pseudo_bytes(32));
+     $verifier =base64UrlSafeEncode(pack('H*', $random));
+     return $verifier;
+ }
+/**
+ * ساخت یک challenge code
+ * @param $codeVerifier
+ * @return string
+ */
+ function generateCodeChallenge($codeVerifier)
+ {
+     return base64UrlSafeEncode(pack('H*', hash('sha256', $codeVerifier)));
+ }
+/**
+ * escape رشته
+ * @param $string
+ * @return string
+ */
+ function base64UrlSafeEncode($string)
+ {
+     return rtrim(strtr(base64_encode($string), '+/', '-_'), '=');
+ }
+
+
+
+$verifier_code= 'jwfTATGFgiiIzWMnAtA9MF39RPc0Ey5Co003tqMxduc';//generateVerified();
+//echo $verifier_code;
+
+$provider = new PayPing\OAuth2\Client\Provider\PayPing([
+    'clientId'          => '318b6954-2f9f-4100-8610-0ea8c373d3b5',
+    'clientSecret'      => 'c2f8d1cc-ead3-4dee-bd6c-ff9de1e8468e',
+    'redirectUri'       => 'http://localhost:8000/callback.php'
+]);
 if (!isset($_GET['code'])) {
 
     // If we don't have an authorization code then get one
-    $authUrl = $provider->getAuthorizationUrl();
+    $authUrl = $provider->getAuthorizationUrl([
+    'code_challenge'=>generateCodeChallenge($verifier_code),
+        'code_challenge_method'=>'S256'
+    ]);
     $_SESSION['oauth2state'] = $provider->getState();
     header('Location: '.$authUrl);
     exit;
 
 // Check given state against previously stored one to mitigate CSRF attack
-} elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
-
-    unset($_SESSION['oauth2state']);
-    exit('Invalid state');
-
 } else {
-
+    try {
     // Try to get an access token (using the authorization code grant)
-    $token = $provider->getAccessToken('authorization_code', [
-        'code' => $_GET['code']
+    $accessToken = $provider->getAccessToken('authorization_code', [
+        'code' => $_GET['code'],
+     "code_verifier" => $verifier_code,
     ]);
 
-    // Optional: Now you have a token you can look up a users profile data
-    try {
-
-        // We got an access token, let's now get the user's details
-        $user = $provider->getResourceOwner($token);
-
-        // Use these details to create a new profile
-        printf('Hello %s!', $user->getId());
-
+        echo 'Access Token: ' . $accessToken->getToken() . "<br>";
+        echo 'Refresh Token: ' . $accessToken->getRefreshToken() . "<br>";
+        echo 'Expired in: ' . $accessToken->getExpires() . "<br>";
+        echo 'Already expired? ' . ($accessToken->hasExpired() ? 'expired' : 'not expired') . "<br>";
     } catch (Exception $e) {
-
-        // Failed to get user details
-        exit('Oh dear...');
-    }
-
-    // Use this to interact with an API on the users behalf
-    echo $token->getToken();
+    echo $e->getMessage();
+   }
 }
 ```
