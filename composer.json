@@ -1,5 +1,5 @@
 {
-    "name": "flotfeali/oauth2-payping-client",
+    "name": "payping/oauth2-payping-client",
     "description": "Payping OAuth 2.0 Client Provider for The PHP League OAuth2-Client",
     "license": "MIT",
     "authors": [
