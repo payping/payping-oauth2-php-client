@@ -44,40 +44,36 @@ include "vendor/autoload.php";
 
 
 
-$verifier_code= 'jwfTATGFgiiIzWMnAtA9MF39RPc0Ey5Co003tqMxduc';//generateVerified();
-//echo $verifier_code;
+$verifier_code= 'CODE_VERIFIER';
 
 $provider = new PayPing\OAuth2\Client\Provider\PayPing([
-    'clientId'          => '318b6954-2f9f-4100-8610-0ea8c373d3b5',
-    'clientSecret'      => 'c2f8d1cc-ead3-4dee-bd6c-ff9de1e8468e',
-    'redirectUri'       => 'http://localhost:8000/callback.php'
+    'clientId'          => '{client_id}',
+    'clientSecret'      => '{client_secret}',
+    'redirectUri'       => '{redirect_url}'
 ]);
 if (!isset($_GET['code'])) {
 
     // If we don't have an authorization code then get one
     $authUrl = $provider->getAuthorizationUrl([
-    'code_challenge'=>generateCodeChallenge($verifier_code),
+        'code_challenge'=>generateCodeChallenge($verifier_code),
         'code_challenge_method'=>'S256'
     ]);
     $_SESSION['oauth2state'] = $provider->getState();
     header('Location: '.$authUrl);
     exit;
-
-// Check given state against previously stored one to mitigate CSRF attack
 } else {
     try {
-    // Try to get an access token (using the authorization code grant)
-    $accessToken = $provider->getAccessToken('authorization_code', [
-        'code' => $_GET['code'],
-     "code_verifier" => $verifier_code,
-    ]);
+       $accessToken = $provider->getAccessToken('authorization_code', [
+           'code' => $_GET['code'],
+           'code_verifier' => $verifier_code,
+       ]);
 
         echo 'Access Token: ' . $accessToken->getToken() . "<br>";
         echo 'Refresh Token: ' . $accessToken->getRefreshToken() . "<br>";
         echo 'Expired in: ' . $accessToken->getExpires() . "<br>";
         echo 'Already expired? ' . ($accessToken->hasExpired() ? 'expired' : 'not expired') . "<br>";
     } catch (Exception $e) {
-    echo $e->getMessage();
-   }
+        echo $e->getMessage();
+    }
 }
 ```
